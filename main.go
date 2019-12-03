@@ -12,9 +12,9 @@ func foo(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	logrus.Info("started docker demo server running on port 8081!")
+	logrus.Info("started docker demo server")
 	http.HandleFunc("/", foo)
-	err := http.ListenAndServe(":8081", nil)
+	err := http.ListenAndServe(":80", nil)
 	if err != nil {
 		logrus.WithError(err).Error("failed to start server")
 	}
