@@ -5,7 +5,7 @@
 replicaCount: 1
 
 image:
-  repository: demo-service
+  repository: demo_service
   tag: latest
   pullPolicy: IfNotPresent
 
