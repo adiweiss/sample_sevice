@@ -14,8 +14,7 @@ provider "helm" {
 resource "helm_release" "demo-service" {
   name         = "demo-serivce"
   chart        = "demo-service"
-  version      = "0.1.0"
+  version      = "0.1.3"
   repository   = "local"
   force_update = true
 }
-
