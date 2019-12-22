@@ -1,0 +1,56 @@
+version: 2
+jobs:
+  helm-build:
+    docker:
+      - image: alpine/helm:2.14.0
+    steps:
+      - checkout
+      - run: echo "helm build"
+      - run: echo "helm liniting" && cd demo-service && helm lint
+      - run: echo "helm package" && helm init --client-only && helm package demo-service
+      - run: apk add curl && apk upgrade
+      - run: curl -H "X-JFrog-Art-Api:$ARTIFACTORY_APIKEY" -T /root/project/demo-service-0.1.3.tgz "$HELM_REPO_URL/demo-service-0.1.3.tgz"
+  build:
+    docker:
+      - image: circleci/golang:1.12
+    environment:
+      - GO11MODULE: on
+      - DOCKER_REGISTRY: $DOCKER_REGISRY_URL
+      - DOCKER_REPOSITORY: $DOCKER_REGISRY_URL/adi_demo_service
+      - GOFLAGS: -mod=vendor
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run: ./.circleci/docker_login
+      - run: docker build --pull -t $(./.circleci/full_tag) .
+      - run: docker push $(./.circleci/full_tag)
+  terraform-build:
+    docker:
+      - image: hashicorp/terraform:latest
+    steps:
+      - checkout
+      - run: echo "terraform lint and deploy"
+      - run: apk add --update curl
+      - run: curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl
+      - run: chmod +x kubectl
+      - run: ./kubectl config set-cluster my-cluster --server="https://0.tcp.ngrok.io:18548" --insecure-skip-tls-verify=true
+      - run: ./kubectl config set-credentials circle-service-account --token="${K8S_TOKEN}"
+      - run: ./kubectl config set-context default-context --cluster=my-cluster --user=circle-service-account
+      - run: ./kubectl config use-context default-context
+      - run: ./kubectl get cs
+      - run: terraform init && terraform validate && terraform fmt && terraform apply -auto-approve -var jfrog_username=$ARTIFACTORY_USER -var jfrog_password=$ARTIFACTORY_PASSWORD -var helm_repo_url=$HELM_REPO_URL -var helm_repo_name=demo_service
+workflows:
+  version: 2
+  cibuild:
+    jobs:
+      - build:
+          context: org-global
+      - helm-build:
+          context: org-global
+          requires:
+            - build
+      - terraform-build:
+          context: org-global
+          requires:
+            - helm-build

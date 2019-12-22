@@ -13,7 +13,7 @@ func foo(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	logrus.Info("started docker demo server")
-	http.HandleFunc("/", foo)
+	http.HandleFunc("/foo", foo)
 	http.HandleFunc("/secret", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "/usr/share/html/index.html")
 	})

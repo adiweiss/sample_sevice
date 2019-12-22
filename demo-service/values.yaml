@@ -5,9 +5,9 @@
 replicaCount: 1
 
 image:
-  repository: demo_service
-  tag: latest
-  pullPolicy: IfNotPresent
+  repository: "" #replace with your docker registry url
+  tag: master
+  pullPolicy: Always
 
 imagePullSecrets: []
 nameOverride: ""
